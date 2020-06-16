@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#define LOG_FILE_NAME "temp_logdata_styl.txt"
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -13,10 +15,15 @@ MainWindow::MainWindow(QWidget *parent) :
     m_searchTime->setSingleShot(true);
     m_searchTime->setInterval(1);
     m_searchTime->start();
+
+    tempFile = new QFile(LOG_FILE_NAME);
+
+
 }
 
 MainWindow::~MainWindow()
 {
+    tempFile->remove();
     delete ui;
 }
 void MainWindow::on_connectButton_clicked()
@@ -24,14 +31,14 @@ void MainWindow::on_connectButton_clicked()
     if (!connectStatus) {
         ui->connectButton->setText("Disconnect");
         connectStatus = true;
-        updateLogData(0,0,0,"Disconnect",connectStatus);
+        updateLogData(0,0,0,"Disconnect","Disconnect",connectStatus);
 
 
     }
     else {
         ui->connectButton->setText("Connect");
         connectStatus = false;
-        updateLogData(0,0,0,"Connect",connectStatus);
+        updateLogData(0,0,0,"Connect","Connect",connectStatus);
     }
 }
 
@@ -61,7 +68,7 @@ void MainWindow::searchPortDobot()
     ui->comboBox->addItem("COM22");
 }
 
-void MainWindow::updateLogData(float x, float y, float z, QString function, bool status){
+void MainWindow::updateLogData(float x, float y, float z, QString function, QString data, bool status){
     currentTime = QDateTime::currentDateTime();
     QString Time = QString("%1").arg(currentTime.time().hour(), 2, 10, QChar('0')) + ":"
             + QString("%1").arg(currentTime.time().minute(), 2, 10, QChar('0')) + ":"
@@ -74,11 +81,20 @@ void MainWindow::updateLogData(float x, float y, float z, QString function, bool
     else mLogData += "<span><font color='red'><b>FAIL</b></font></span><br>";
     ui->textEdit->setText(mLogData);
     ui->textEdit->moveCursor(QTextCursor::End);
+    updateLogFile(Time, x, y, z, "alo123", "alo123", status);
 }
 
-void MainWindow::updateLogFile(float x, float y, float z, QString function, bool status)
+void MainWindow::updateLogFile(QString time, float x, float y, float z, QString function, QString data, bool status)
 {
-
+    QTextStream out(tempFile);
+    QString firstData = time + " X:" + QString::number(x) + " Y:" + QString::number(y) + " Z:" + QString::number(z) + " " + function + " " + data;
+    if (status) firstData += " PASSED";
+    else firstData += " FAILED";
+    if(tempFile->open(QIODevice::ReadWrite)){
+        if (out.readAll() == "") out << firstData << endl;
+        else out << firstData << endl;
+    }
+    tempFile->close();
 }
 
 void MainWindow::onConnection()
@@ -107,4 +123,23 @@ void MainWindow::onConnection()
 //        refreshBtn();
 //        DisconnectDobot(dobotId);
 //    }
+}
+
+void MainWindow::on_saveButton_clicked()
+{
+    QString filter = "Text (*.txt)";
+    QString fileName = QFileDialog::getSaveFileName(this, "Save file", QDir::homePath(), filter);
+    QFile::copy(LOG_FILE_NAME, fileName + ".txt");
+    QMessageBox msg;
+    msg.setWindowTitle("Save file log");
+
+    msg.setText("Save file successfully!!!");
+    msg.exec();
+}
+
+void MainWindow::on_loadButton_clicked()
+{
+    QString filter = "Text (*.txt)";
+    mFileName = QFileDialog::getOpenFileName(this, "Open file", QDir::homePath(), filter);
+    ui->textEdit_2->setText(mFileName);
 }
