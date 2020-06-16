@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui network xml serialport printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -29,3 +29,14 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h
 
 FORMS    += mainwindow.ui
+
+#INCLUDEPATH += $$PWD/DobotDll
+#LIBS += -L$$PWD/DobotDll/ -lDobotDll
+
+#DESTDIR = ./DobotDll
+
+
+win32: LIBS += -L$$PWD/DobotDll/ -lDobotDll
+
+INCLUDEPATH += $$PWD/DobotDll
+DEPENDPATH += $$PWD/DobotDll
