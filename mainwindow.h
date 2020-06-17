@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QObject>
+#include <QVariantMap>
 #include <QTimer>
 #include <QDateTime>
 #include <QFileDialog>
@@ -12,6 +13,7 @@
 #include <QMessageBox>
 #include "DobotDll.h"
 #include "DobotType.h"
+#include "cWorker.h"
 
 namespace Ui {
 class MainWindow;
@@ -39,6 +41,7 @@ private slots:
 
     void on_stopButton_clicked();
 
+    void on_slot_receiveResult(QVariantMap map);
 private:
     Ui::MainWindow *ui;
     QString mLogData;
@@ -59,6 +62,14 @@ private:
 
     QString getCurrentTime();
     Pose *mPose;
+    /**
+     * @brief Thread object which will let us manipulate the running thread
+     */
+    QThread *thread;
+    /**
+     * @brief Object which contains methods that should be runned in another thread
+     */
+    cWorker* worker;
 };
 
 #endif // MAINWINDOW_H

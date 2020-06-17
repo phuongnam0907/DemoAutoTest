@@ -19,12 +19,24 @@ MainWindow::MainWindow(QWidget *parent) :
 
     tempFile = new QFile(LOG_FILE_NAME);
 
+    worker = new cWorker();
+    thread = new QThread();
 
+    worker->moveToThread(thread);
+    connect(thread, SIGNAL(started()), worker, SLOT(mainLoop()));
+    connect(worker, SIGNAL(finished()), thread, SLOT(quit()), Qt::DirectConnection);
+    thread->start();
+
+    connect(worker)
 }
 
 MainWindow::~MainWindow()
 {
     tempFile->remove();
+    worker->abort();
+    thread->wait();
+    delete thread;
+    delete worker;
     delete ui;
 }
 void MainWindow::on_connectButton_clicked()
@@ -209,7 +221,28 @@ bool MainWindow::equalFloat(float f1, float f2)
 
 bool MainWindow::moveToXYZ(float x, float y, float z)
 {
-    fasd
+    bool isCheck = true;
+
+    PTPCmd ptpCmd;
+    ptpCmd.ptpMode = PTPMOVJXYZMode;
+    ptpCmd.x = mPose->x + x;
+    ptpCmd.y = mPose->y + y;
+    ptpCmd.z = mPose->z + z;
+    ptpCmd.r = mPose->r;
+
+    while (SetPTPCmd(dobotId, &ptpCmd, true, NULL) != DobotCommunicate_NoError) {
+        return false;
+    }
+
+    while (isCheck) {
+        Pose pose;
+        GetPose(dobotId, &pose);
+        if (equalFloat(pose.x, ptpCmd.x) &&
+            equalFloat(pose.x, ptpCmd.x) &&
+            equalFloat(pose.x, ptpCmd.x) &&
+            equalFloat(pose.x, ptpCmd.x)) isCheck = false;
+    }
+    return true;
 }
 
 QString MainWindow::getCurrentTime()
@@ -249,8 +282,8 @@ void MainWindow::on_setButton_clicked()
     mPose->y = pose.y;
     mPose->z = pose.z;
     mPose->r = pose.r;
-    updateLogData(pose.x, pose.y, pose.z, "Get Data", "Get Data", true);
-    updateLogData(mPose->x, mPose->y, mPose->z, "Set Data", "Set Data", true);
+//    updateLogData(pose.x, pose.y, pose.z, "Get Data", "Get Data", true);
+    updateLogData(mPose->x, mPose->y, mPose->z, "Set Data Original", "", true);
 }
 
 void MainWindow::on_startButton_clicked()
@@ -305,9 +338,26 @@ void MainWindow::on_startButton_clicked()
         qDebug() << "debug number 4";
         cba *= -1;
     }
+
+
+    worker->requestMethod(cWorker::Start, tempFile);
 }
 
 void MainWindow::on_stopButton_clicked()
 {
+    worker->requestMethod(cWorker::Stop, tempFile);
+}
 
+void MainWindow::on_slot_receiveResult(QVariantMap map)
+{
+    float x = map.value("x").toFloat();
+    float y = map.value("y").toFloat();
+    float z = map.value("z").toFloat();
+    QString functionName = map.value("function").toString();
+    QByteArray data = map.value("data").toByteArray();
+    bool isPass = map.value("pass").toBool();
+
+    QString dataString;
+
+    updateLogData(x, y, z, functionName, dataString, isPass);
 }
