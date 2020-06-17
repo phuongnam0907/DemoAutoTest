@@ -5,12 +5,18 @@
 #include <QMutex>
 #include <QFile>
 #include <QIODevice>
+#include <QTextStream>
+#include <QStringList>
 #include <QWaitCondition>
 #include <QTimer>
 #include <QEventLoop>
 #include <QThread>
 #include <QDebug>
 #include <QVariantMap>
+#include <cCardDetection.h>
+#include <rfcapiinit.h>
+#include "DobotType.h"
+#include "DobotDll.h"
 
 class cWorker : public QObject
 {
@@ -23,7 +29,9 @@ public:
      */
     enum Method {
         Start = 1,
-        Stop = 2
+        Stop = 2,
+        Open = 3,
+        Close = 4
     };
     /**
      * @brief Requests for the method @em method to be executed
@@ -31,7 +39,7 @@ public:
      * This method will defines #_method and set #_abort to interrupt current method.
      * It is thread safe as it uses #mutex to protect access to #_method and #_abort variable.
      */
-    void requestMethod(Method method, QString filName);
+    void requestMethod(Method method);
     /**
      * @brief Requests the process to abort
      *
@@ -73,6 +81,20 @@ private:
      * Counting is interrupted if #_abort or #_interrupt is set to true.
      */
     void doStop();
+    /**
+     * @brief 3rd method which could be called
+     *
+     * Counts 30 sec in this example.
+     * Counting is interrupted if #_abort or #_interrupt is set to true.
+     */
+    void doOpen();
+    /**
+     * @brief 3rd method which could be called
+     *
+     * Counts 30 sec in this example.
+     * Counting is interrupted if #_abort or #_interrupt is set to true.
+     */
+    void doClose();
 
 signals:
     /**
@@ -92,9 +114,22 @@ public slots:
 private:
 
     QString mFileName;
+    int mDobotId;
+    Pose mOriginPose;
+    QFile *mFile;
+    cCardDetection *mCardDetection;
+    QString mPortReader;
 
-    QVariantMap packageData(float x, float y, float z, QString function, QByteArray data, bool status);
+    void packageData(float x, float y, float z, QString function, QByteArray data, bool status);
 
+    bool equalFloat(float f1, float f2);
+
+    bool moveToXYZ(float x, float y, float z);
+
+public:
+    void setOriginalCordiante(int dobotId, Pose pose);
+    void setPortReader(QString portName);
+    void setFileName(QString fileName);
 };
 
 #endif // CWORKER_H

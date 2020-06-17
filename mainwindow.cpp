@@ -10,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->comboBox_2->addItem("115200");
+    ui->comboBox_3->addItem("115200");
 
     m_searchTime = new QTimer(this);
     connect(m_searchTime, SIGNAL(timeout()), this, SLOT(searchPortDobot()));
@@ -27,7 +28,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(worker, SIGNAL(finished()), thread, SLOT(quit()), Qt::DirectConnection);
     thread->start();
 
-    connect(worker)
+    connect(worker, SIGNAL(valueChanged(QVariantMap)), this, SLOT(on_slot_receiveResult(QVariantMap)));
+    isConnectUI();
 }
 
 MainWindow::~MainWindow()
@@ -44,16 +46,13 @@ void MainWindow::on_connectButton_clicked()
     onConnection();
     if (connectStatus) {
         ui->connectButton->setText("Disconnect");
-        updateLogData(0,0,0,"Disconnect","Disconnect",connectStatus);
-        ui->comboBox->setEnabled(false);
-        ui->comboBox_2->setEnabled(false);
+        updateLogData(0,0,0,"Connect","",connectStatus);
     }
     else {
         ui->connectButton->setText("Connect");
-        updateLogData(0,0,0,"Connect","Connect",connectStatus);
-        ui->comboBox->setEnabled(true);
-        ui->comboBox_2->setEnabled(true);
+        updateLogData(0,0,0,"Disconnect","",connectStatus);
     }
+    isConnectUI();
 }
 
 void MainWindow::searchPortDobot(void)
@@ -64,7 +63,9 @@ void MainWindow::searchPortDobot(void)
         strcpy(mList,lis);
         QStringList comList = QString(lis).split(" ");
         ui->comboBox->clear();
+        ui->comboBox_4->clear();
         for (int i = 0; i < comList.size(); ++i) ui->comboBox->addItem(comList.at(i));
+        for (int i = 0; i < comList.size(); ++i) ui->comboBox_4->addItem(comList.at(i));
     }
     m_searchTime->start();
 
@@ -75,7 +76,8 @@ void MainWindow::updateLogData(float x, float y, float z, QString function, QStr
     QString Time = getCurrentTime();
     if (mLogData.size() > 40000) mLogData.clear();
     mLogData += "<span><font size=4><font color='blue'><b>" + Time + "</b></font></font></span>" + "<br>";
-    mLogData += "X: " + QString::number(x) + " | Y: " + QString::number(y) + " | Z: " + QString::number(z) + " | " + function + ": " + data + "<br>";
+    mLogData += "X: " + QString::number(x) + " | Y: " + QString::number(y) + " | Z: " + QString::number(z) + " | " + function + "<br>";
+    if (!data.isEmpty()) mLogData += "<b>Data:</b> " + data + "<br>";
 //    if(status) mLogData += "<span><font color='green'><b>PASSED</b></font></span><br>";
 //    else mLogData += "<span><font color='red'><b>FAIL</b></font></span><br>";
     ui->textEdit->setText(mLogData);
@@ -107,12 +109,8 @@ void MainWindow::onConnection()
             QMessageBox::information(this, tr("Error"), tr("Connect dobot error!!!"), QMessageBox::Ok);
             return;
         }
-
-        qDebug() << "dobotId" << dobotId;
         connectStatus = true;
         initDobot();
-
-        qDebug() << "connect success!!!";
     } else {
         connectStatus = false;
         DisconnectDobot(dobotId);
@@ -200,49 +198,21 @@ void MainWindow::initDobot()
     SetPTPJumpParams(dobotId, &ptpJumpParams, false, NULL);
 }
 
-bool MainWindow::equalFloat(float f1, float f2)
+void MainWindow::isConnectUI()
 {
-    if (f1 > f2)
-    {
-        if (f1 - f2 <= 2) return true;
-        else return false;
-    }
-    else if (f1 < f2)
-    {
-        if (f2 - f1 <= 2) return true;
-        else return false;
-    }
-    else
-    {
-        if (f2 == f1) return true;
-        else return false;
-    }
-}
-
-bool MainWindow::moveToXYZ(float x, float y, float z)
-{
-    bool isCheck = true;
-
-    PTPCmd ptpCmd;
-    ptpCmd.ptpMode = PTPMOVJXYZMode;
-    ptpCmd.x = mPose->x + x;
-    ptpCmd.y = mPose->y + y;
-    ptpCmd.z = mPose->z + z;
-    ptpCmd.r = mPose->r;
-
-    while (SetPTPCmd(dobotId, &ptpCmd, true, NULL) != DobotCommunicate_NoError) {
-        return false;
-    }
-
-    while (isCheck) {
-        Pose pose;
-        GetPose(dobotId, &pose);
-        if (equalFloat(pose.x, ptpCmd.x) &&
-            equalFloat(pose.x, ptpCmd.x) &&
-            equalFloat(pose.x, ptpCmd.x) &&
-            equalFloat(pose.x, ptpCmd.x)) isCheck = false;
-    }
-    return true;
+    ui->comboBox->setEnabled(!connectStatus);
+    ui->comboBox_2->setEnabled(!connectStatus);
+    ui->comboBox_3->setEnabled(!connectReader);
+    ui->comboBox_4->setEnabled(!connectReader);
+    ui->loadButton->setEnabled(connectStatus && connectReader);
+    ui->setButton->setEnabled(connectStatus && connectReader);
+    ui->label_2->setEnabled(!connectStatus);
+    ui->label_3->setEnabled(!connectStatus);
+    ui->label_4->setEnabled(!connectReader);
+    ui->label_5->setEnabled(!connectReader);
+    ui->textEdit_2->setEnabled(connectStatus && connectReader);
+    ui->startButton->setEnabled(connectStatus && connectReader);
+    ui->stopButton->setEnabled(connectStatus && connectReader);
 }
 
 QString MainWindow::getCurrentTime()
@@ -282,70 +252,70 @@ void MainWindow::on_setButton_clicked()
     mPose->y = pose.y;
     mPose->z = pose.z;
     mPose->r = pose.r;
-//    updateLogData(pose.x, pose.y, pose.z, "Get Data", "Get Data", true);
-    updateLogData(mPose->x, mPose->y, mPose->z, "Set Data Original", "", true);
+    updateLogData(mPose->x, mPose->y, mPose->z, "Set Original Cordinate", "", true);
+    worker->setOriginalCordiante(dobotId, pose);
 }
 
 void MainWindow::on_startButton_clicked()
 {
-    float abc = 40;
-    float cba = 30;
-    bool isCheck = true;
-    while (true) {
-        isCheck = true;
+//    float abc = 40;
+//    float cba = 30;
+//    bool isCheck = true;
+//    while (true) {
+//        isCheck = true;
 
-        PTPCmd ptpCmd;
-        ptpCmd.ptpMode = PTPMOVJXYZMode;
-        ptpCmd.x = mPose->x + abc;
-        ptpCmd.y = mPose->y;
-        ptpCmd.z = mPose->z;
-        ptpCmd.r = mPose->r;
-        qDebug() << "debug number 1";
+//        PTPCmd ptpCmd;
+//        ptpCmd.ptpMode = PTPMOVJXYZMode;
+//        ptpCmd.x = mPose->x + abc;
+//        ptpCmd.y = mPose->y;
+//        ptpCmd.z = mPose->z;
+//        ptpCmd.r = mPose->r;
+//        qDebug() << "debug number 1";
 
-        while (SetPTPCmd(dobotId, &ptpCmd, true, NULL) != DobotCommunicate_NoError) {}
+//        while (SetPTPCmd(dobotId, &ptpCmd, true, NULL) != DobotCommunicate_NoError) {}
 
-        while (isCheck) {
-            Pose pose;
-            GetPose(dobotId, &pose);
-            if (equalFloat(pose.x, ptpCmd.x) &&
-                equalFloat(pose.x, ptpCmd.x) &&
-                equalFloat(pose.x, ptpCmd.x) &&
-                equalFloat(pose.x, ptpCmd.x)) isCheck = false;
-        }
-        qDebug() << "debug number 4";
-        abc *= -1;
+//        while (isCheck) {
+//            Pose pose;
+//            GetPose(dobotId, &pose);
+//            if (equalFloat(pose.x, ptpCmd.x) &&
+//                equalFloat(pose.x, ptpCmd.x) &&
+//                equalFloat(pose.x, ptpCmd.x) &&
+//                equalFloat(pose.x, ptpCmd.x)) isCheck = false;
+//        }
+//        qDebug() << "debug number 4";
+//        abc *= -1;
 
-        isCheck = true;
+//        isCheck = true;
 
-        PTPCmd xptpCmd;
-        xptpCmd.ptpMode = PTPMOVJXYZMode;
-        xptpCmd.x = ptpCmd.x;
-        xptpCmd.y = mPose->y;
-        xptpCmd.z = mPose->z + cba;
-        xptpCmd.r = mPose->r;
-        qDebug() << "debug number 1";
+//        PTPCmd xptpCmd;
+//        xptpCmd.ptpMode = PTPMOVJXYZMode;
+//        xptpCmd.x = ptpCmd.x;
+//        xptpCmd.y = mPose->y;
+//        xptpCmd.z = mPose->z + cba;
+//        xptpCmd.r = mPose->r;
+//        qDebug() << "debug number 1";
 
-        while (SetPTPCmd(dobotId, &xptpCmd, true, NULL) != DobotCommunicate_NoError) {}
+//        while (SetPTPCmd(dobotId, &xptpCmd, true, NULL) != DobotCommunicate_NoError) {}
 
-        while (isCheck) {
-            Pose pose;
-            GetPose(dobotId, &pose);
-            if (equalFloat(pose.x, xptpCmd.x) &&
-                equalFloat(pose.x, xptpCmd.x) &&
-                equalFloat(pose.x, xptpCmd.x) &&
-                equalFloat(pose.x, xptpCmd.x)) isCheck = false;
-        }
-        qDebug() << "debug number 4";
-        cba *= -1;
-    }
+//        while (isCheck) {
+//            Pose pose;
+//            GetPose(dobotId, &pose);
+//            if (equalFloat(pose.x, xptpCmd.x) &&
+//                equalFloat(pose.x, xptpCmd.x) &&
+//                equalFloat(pose.x, xptpCmd.x) &&
+//                equalFloat(pose.x, xptpCmd.x)) isCheck = false;
+//        }
+//        qDebug() << "debug number 4";
+//        cba *= -1;
+//    }
 
-
-    worker->requestMethod(cWorker::Start, tempFile);
+    worker->setFileName(mFileName);
+    worker->requestMethod(cWorker::Start);
 }
 
 void MainWindow::on_stopButton_clicked()
 {
-    worker->requestMethod(cWorker::Stop, tempFile);
+    worker->requestMethod(cWorker::Stop);
 }
 
 void MainWindow::on_slot_receiveResult(QVariantMap map)
@@ -357,7 +327,23 @@ void MainWindow::on_slot_receiveResult(QVariantMap map)
     QByteArray data = map.value("data").toByteArray();
     bool isPass = map.value("pass").toBool();
 
-    QString dataString;
+    QString dataString = QString::fromStdString(data.toStdString());
 
     updateLogData(x, y, z, functionName, dataString, isPass);
+}
+
+void MainWindow::on_portButton_clicked()
+{
+    if (!connectReader) {
+        connectReader = true;
+        ui->portButton->setText("Disconnect");
+        worker->setPortReader(ui->comboBox_4->currentText());
+        worker->requestMethod(cWorker::Open);
+    }
+    else {
+        connectReader = false;
+        worker->requestMethod(cWorker::Close);
+        ui->portButton->setText("Connect");
+    }
+    isConnectUI();
 }

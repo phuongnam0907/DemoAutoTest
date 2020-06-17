@@ -25,20 +25,52 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    cWorker.cpp
+    cWorker.cpp \
+    cCardDetection.cpp \
+    ../../xmsdk/src/mlsBluefinSerial/src/mlsCmdParser.c \
+    ../../xmsdk/src/mlsBluefinSerial/src/mlsComm.c \
+    ../../xmsdk/src/mlsBluefinSerial/src/mlsReaderHandler.c \
+    ../../xmsdk/src/mlsBluefinSerial/src/mlsSerialDebugPrint.c \
+    ../../xmsdk/src/mlsBluefinSerial/src/mlsSerialPorting.c \
+    ../../xmsdk/src/mlsBluefinSerial/src/winQueue.c \
+    ../../xmsdk/src/mlsBluefinSerial/src/winSerial.c \
+    ../../xmsdk/src/mlsBluefinSerial/src/mlsHouseKeepingService.c \
+    ../../xmsdk/src/mlsRFCAPI/src/rfcapiinfineonmyd.c \
+    ../../xmsdk/src/mlsAppCAPI/src/mlsappcapi.c \
+    ../../xmsdk/src/mlsRFCAPI/src/rfcapiinit.c
 
 HEADERS  += mainwindow.h \
-    cWorker.h
+    cWorker.h \
+    cCardDetection.h \
+    ../../xmsdk/src/include/mlsCompileSwitches.h \
+    ../../xmsdk/src/include/mlsErrors.h \
+    ../../xmsdk/src/include/mlsInclude.h \
+    ../../xmsdk/src/include/mlsMacros.h \
+    ../../xmsdk/src/include/mlsTypes.h \
+    ../../xmsdk/src/mlsBluefinSerial/inc/mlsCmdParser.h \
+    ../../xmsdk/src/mlsBluefinSerial/inc/mlsComm.h \
+    ../../xmsdk/src/mlsBluefinSerial/inc/mlsReaderHandler.h \
+    ../../xmsdk/src/mlsBluefinSerial/inc/mlsSerialDebugPrint.h \
+    ../../xmsdk/src/mlsBluefinSerial/inc/mlsSerialPorting.h \
+    ../../xmsdk/src/mlsBluefinSerial/inc/winQueue.h \
+    ../../xmsdk/src/mlsBluefinSerial/inc/winSerial.h \
+    ../../xmsdk/src/mlsBluefinSerial/inc/mlsHouseKeepingService.h \
+    ../../xmsdk/src/mlsBluefinSerial/inc/mlsRfApi.h \
+    ../../xmsdk/src/mlsAppCAPI/inc/mlsappcapi.h \
+    ../../xmsdk/src/mlsRFCAPI/inc/mifaredesfireerrorcode.h \
+    ../../xmsdk/src/mlsRFCAPI/inc/resultcode.h \
+    ../../xmsdk/src/mlsRFCAPI/inc/rfcapiinit.h
 
 FORMS    += mainwindow.ui
 
-#INCLUDEPATH += $$PWD/DobotDll
-#LIBS += -L$$PWD/DobotDll/ -lDobotDll
-
-#DESTDIR = ./DobotDll
-
+INCLUDEPATH += ../../xmsdk/src/include \
+     ../../xmsdk/src/mlsBluefinSerial/inc \
+     ../../xmsdk/src/mlsRFCAPI/inc \
 
 win32: LIBS += -L$$PWD/DobotDll/ -lDobotDll
 
 INCLUDEPATH += $$PWD/DobotDll
 DEPENDPATH += $$PWD/DobotDll
+
+win32:DEFINES += PLATFORM_SEL_WINDOWS=1 SUPPORT_DUMP_DEBUG_DATA=0 BUILD_MODE_HOST=1 QT_CREATOR SERIAL_READ_NON_BLOCKING=1 QT_DEBUG_PRINT
+else:unix:DEFINES += USE_DF_TIMER PLATFORM_SEL_LINUX=1 SUPPORT_DUMP_DEBUG_DATA=0 BUILD_MODE_HOST=1 QT_CREATOR BUILD_ENV_LINUX_PC=1 SERIAL_READ_NON_BLOCKING=1 QT_DEBUG_PRINT
