@@ -37,7 +37,10 @@ SOURCES += main.cpp\
     ../../xmsdk/src/mlsBluefinSerial/src/mlsHouseKeepingService.c \
     ../../xmsdk/src/mlsRFCAPI/src/rfcapiinfineonmyd.c \
     ../../xmsdk/src/mlsAppCAPI/src/mlsappcapi.c \
-    ../../xmsdk/src/mlsRFCAPI/src/rfcapiinit.c
+    ../../xmsdk/src/mlsRFCAPI/src/rfcapiinit.c \
+    ../../xmsdk/src/mlsRFCAPI/src/rfcapimiscellaneouscommands.c \
+    ../../xmsdk/src/mlsUltil/src/mlsUltil.c \
+    cConvert.cpp
 
 HEADERS  += mainwindow.h \
     cWorker.h \
@@ -59,7 +62,10 @@ HEADERS  += mainwindow.h \
     ../../xmsdk/src/mlsAppCAPI/inc/mlsappcapi.h \
     ../../xmsdk/src/mlsRFCAPI/inc/mifaredesfireerrorcode.h \
     ../../xmsdk/src/mlsRFCAPI/inc/resultcode.h \
-    ../../xmsdk/src/mlsRFCAPI/inc/rfcapiinit.h
+    ../../xmsdk/src/mlsRFCAPI/inc/rfcapiinit.h \
+    ../../xmsdk/src/mlsRFCAPI/inc/rfcapimiscellaneouscommands.h \
+    ../../xmsdk/src/mlsUltil/inc/mlsUltil.h \
+    cConvert.h
 
 FORMS    += mainwindow.ui
 

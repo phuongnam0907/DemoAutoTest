@@ -76,10 +76,11 @@ void MainWindow::updateLogData(float x, float y, float z, QString function, QStr
     QString Time = getCurrentTime();
     if (mLogData.size() > 40000) mLogData.clear();
     mLogData += "<span><font size=4><font color='blue'><b>" + Time + "</b></font></font></span>" + "<br>";
-    mLogData += "X: " + QString::number(x) + " | Y: " + QString::number(y) + " | Z: " + QString::number(z) + " | " + function + "<br>";
+    mLogData += "X: " + QString::number(x) + " | Y: " + QString::number(y) + " | Z: " + QString::number(z) + " | " + function + " ==> ";
+//    if (!data.isEmpty()) mLogData += "<b>Data:</b> " + data + "<br>";
+    if(status) mLogData += "<span><font color='green'><b>PASSED</b></font></span><br>";
+    else mLogData += "<span><font color='red'><b>FAILED</b></font></span><br>";
     if (!data.isEmpty()) mLogData += "<b>Data:</b> " + data + "<br>";
-//    if(status) mLogData += "<span><font color='green'><b>PASSED</b></font></span><br>";
-//    else mLogData += "<span><font color='red'><b>FAIL</b></font></span><br>";
     ui->textEdit->setText(mLogData);
     ui->textEdit->moveCursor(QTextCursor::End);
     updateLogFile(Time, x, y, z, function, data, status);
@@ -89,8 +90,8 @@ void MainWindow::updateLogFile(QString time, float x, float y, float z, QString 
 {
     QTextStream out(tempFile);
     QString firstData = time + " X:" + QString::number(x) + " Y:" + QString::number(y) + " Z:" + QString::number(z) + " " + function + " " + data;
-//    if (status) firstData += " PASSED";
-//    else firstData += " FAILED";
+    if (status) firstData += " PASSED";
+    else firstData += " FAILED";
     if(tempFile->open(QIODevice::ReadWrite)){
         out.readAll();
         out << firstData << endl;
@@ -324,12 +325,13 @@ void MainWindow::on_slot_receiveResult(QVariantMap map)
     float y = map.value("y").toFloat();
     float z = map.value("z").toFloat();
     QString functionName = map.value("function").toString();
-    QByteArray data = map.value("data").toByteArray();
+    QString data = map.value("data").toString();
     bool isPass = map.value("pass").toBool();
+//    char*
 
-    QString dataString = QString::fromStdString(data.toStdString());
+//    QString dataString = cConvert::ArraytoString(data.data(), data.size());
 
-    updateLogData(x, y, z, functionName, dataString, isPass);
+    updateLogData(x, y, z, functionName, data, isPass);
 }
 
 void MainWindow::on_portButton_clicked()

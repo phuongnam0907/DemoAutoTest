@@ -11,6 +11,7 @@
 #include <QFile>
 #include <QThread>
 #include <QMessageBox>
+#include "cConvert.h"
 #include "DobotDll.h"
 #include "DobotType.h"
 #include "cWorker.h"

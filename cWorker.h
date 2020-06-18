@@ -18,6 +18,10 @@
 #include "DobotType.h"
 #include "DobotDll.h"
 
+#define SERIAL_PREFIX   "\\\\.\\"
+#define FAIL            0xFF
+#define OK              0x00
+
 class cWorker : public QObject
 {
     Q_OBJECT
@@ -119,8 +123,9 @@ private:
     QFile *mFile;
     cCardDetection *mCardDetection;
     QString mPortReader;
+    char *portname;
 
-    void packageData(float x, float y, float z, QString function, QByteArray data, bool status);
+    void packageData(float x, float y, float z, QString function, QString data, bool status);
 
     bool equalFloat(float f1, float f2);
 

@@ -3,7 +3,8 @@
 
 #include <QObject>
 #include <mlsErrors.h>
-#include <mlsCmdParser.h>
+#include <rfcapimiscellaneouscommands.h>
+#include "cConvert.h"
 
 class cCardDetection : public QObject
 {
@@ -11,7 +12,7 @@ class cCardDetection : public QObject
 
 public:
     cCardDetection();
-    quint8 cardDetection(quint8 ucAntenna, quint8 ucPollingSequence, quint8 ucTypeANo, quint8 ucTypeBNo, quint8 ucTypeCNo, quint16 usiSystemCode, quint16 usiTimeout, QByteArray* data);
+    quint8 cardDetection(quint8 ucAntenna, quint8 PollingSequence, quint8 TypeANo, quint8 TypeBNo, quint8 TypeCNo, quint16 systemCode, quint16 Timeout, QString *data);
 };
 
 #endif // CCARDDETECTION_H

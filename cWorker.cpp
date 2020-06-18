@@ -17,17 +17,17 @@ void cWorker::requestMethod(cWorker::Method method)
 void cWorker::abort()
 {
     QMutexLocker locker(&mutex);
-    if(mFile->isOpen()) mFile->close();
+//    if(mFile->isOpen()) mFile->close();
     _abort = true;
     condition.wakeOne();
 }
 
 void cWorker::doStart()
 {
-//    mFile = new QFile(mFileName);
+    mFile = new QFile(mFileName);
     QTextStream file(mFile);
     QString line;
-    QByteArray data;
+    QString data;
     bool check = false;
     if (mFile->open(QIODevice::ReadOnly)) {
         while (!file.atEnd()) {
@@ -39,7 +39,7 @@ void cWorker::doStart()
             if (abort || interrupt) break;
             check = false;
 
-            data.clear();
+            data = "";
             line = file.readLine(30);
             QStringList list = line.split(",");
             if(list.size() == 3)
@@ -49,10 +49,10 @@ void cWorker::doStart()
                 float y = list.at(1).toFloat();
                 float z = list.at(2).toFloat();
 
-                if (moveToXYZ(x, y, z)) packageData(x, y, z, "Card Detection", data, true);
-//                if (moveToXYZ(x, y, z)) resultCode = mCardDetection->cardDetection(0x03, 0x01, 0x06, 0x06, 0x06, 0xFFFF, 500, &data);
-//                if (resultCode == 0x00) packageData(x, y, z, "Card Detection", data, true);
-//                else packageData(x, y, z, "Card Detection", data, false);
+//                if (moveToXYZ(x, y, z)) packageData(x, y, z, "Card Detection", data, true);
+                if (moveToXYZ(x, y, z)) resultCode = mCardDetection->cardDetection(0x03, 0x01, 0x06, 0x06, 0x06, 0xFFFF, 500, &data);
+                if (resultCode == 0x00) packageData(x, y, z, "Card Detection", data, true);
+                else packageData(x, y, z, "Card Detection", data, false);
             }
         }
     }
@@ -66,18 +66,26 @@ void cWorker::doStop()
 
 void cWorker::doOpen()
 {
-//    rfcapi_Init()
+    quint8 resultCode = FAIL;
+
+    resultCode = rfcapi_Init(portname, 0x02);
+
+    packageData(0,0,0, "Open Port Reader " + mPortReader, QByteArray::number(resultCode,10), true);
 }
 
 void cWorker::doClose()
 {
-//    rfcapi_Deinit()
+    quint8 resultCode = FAIL;
+
+    resultCode = rfcapi_Deinit(portname);
+
+    packageData(0,0,0, "Close Port Reader " + mPortReader, QByteArray::number(resultCode,10), true);
 }
 
 void cWorker::mainLoop()
 {
     mCardDetection = new cCardDetection();
-    mFile = new QFile(mFileName);
+//    mFile = new QFile(mFileName);
     forever {
         mutex.lock();
         if (!_interrupt && !_abort) {
@@ -111,7 +119,7 @@ void cWorker::mainLoop()
     }
 }
 
-void cWorker::packageData(float x, float y, float z, QString function, QByteArray data, bool status)
+void cWorker::packageData(float x, float y, float z, QString function, QString data, bool status)
 {
     QVariantMap map;
     map.insert("x", x);
@@ -151,8 +159,8 @@ bool cWorker::moveToXYZ(float x, float y, float z)
     float tempZ;
 
     bool isCheck = true;
-    bool abort;
-    bool interrupt;
+//    bool abort;
+//    bool interrupt;
 
     // Step 1: current x, current y, z + 20
     isCheck = true;
@@ -229,6 +237,11 @@ void cWorker::setOriginalCordiante(int dobotId, Pose pose)
 void cWorker::setPortReader(QString portName)
 {
     mPortReader = portName;
+
+    QString PortName = SERIAL_PREFIX + mPortReader;
+    static QByteArray sArray;
+    sArray = PortName.toLatin1();
+    portname = sArray.data();
 }
 
 void cWorker::setFileName(QString fileName)
