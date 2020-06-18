@@ -9,6 +9,9 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+
+    this->setWindowTitle("Automation Test");
+
     ui->comboBox_2->addItem("115200");
     ui->comboBox_3->addItem("115200");
 
@@ -230,12 +233,12 @@ void MainWindow::on_saveButton_clicked()
 {
     QString filter = "Text (*.txt)";
     QString fileName = QFileDialog::getSaveFileName(this, "Save file", QDir::homePath(), filter);
-    QFile::copy(LOG_FILE_NAME, fileName);
-    QMessageBox msg;
-    msg.setWindowTitle("Save file log");
-
-    msg.setText("Save file successfully!!!");
-    msg.exec();
+    if(QFile::copy(LOG_FILE_NAME, fileName)){
+        QMessageBox msg;
+        msg.setWindowTitle("Save file log");
+        msg.setText("Save file successfully!!!");
+        msg.exec();
+    }
 }
 
 void MainWindow::on_loadButton_clicked()
@@ -259,57 +262,6 @@ void MainWindow::on_setButton_clicked()
 
 void MainWindow::on_startButton_clicked()
 {
-//    float abc = 40;
-//    float cba = 30;
-//    bool isCheck = true;
-//    while (true) {
-//        isCheck = true;
-
-//        PTPCmd ptpCmd;
-//        ptpCmd.ptpMode = PTPMOVJXYZMode;
-//        ptpCmd.x = mPose->x + abc;
-//        ptpCmd.y = mPose->y;
-//        ptpCmd.z = mPose->z;
-//        ptpCmd.r = mPose->r;
-//        qDebug() << "debug number 1";
-
-//        while (SetPTPCmd(dobotId, &ptpCmd, true, NULL) != DobotCommunicate_NoError) {}
-
-//        while (isCheck) {
-//            Pose pose;
-//            GetPose(dobotId, &pose);
-//            if (equalFloat(pose.x, ptpCmd.x) &&
-//                equalFloat(pose.x, ptpCmd.x) &&
-//                equalFloat(pose.x, ptpCmd.x) &&
-//                equalFloat(pose.x, ptpCmd.x)) isCheck = false;
-//        }
-//        qDebug() << "debug number 4";
-//        abc *= -1;
-
-//        isCheck = true;
-
-//        PTPCmd xptpCmd;
-//        xptpCmd.ptpMode = PTPMOVJXYZMode;
-//        xptpCmd.x = ptpCmd.x;
-//        xptpCmd.y = mPose->y;
-//        xptpCmd.z = mPose->z + cba;
-//        xptpCmd.r = mPose->r;
-//        qDebug() << "debug number 1";
-
-//        while (SetPTPCmd(dobotId, &xptpCmd, true, NULL) != DobotCommunicate_NoError) {}
-
-//        while (isCheck) {
-//            Pose pose;
-//            GetPose(dobotId, &pose);
-//            if (equalFloat(pose.x, xptpCmd.x) &&
-//                equalFloat(pose.x, xptpCmd.x) &&
-//                equalFloat(pose.x, xptpCmd.x) &&
-//                equalFloat(pose.x, xptpCmd.x)) isCheck = false;
-//        }
-//        qDebug() << "debug number 4";
-//        cba *= -1;
-//    }
-
     worker->setFileName(mFileName);
     worker->requestMethod(cWorker::Start);
 }

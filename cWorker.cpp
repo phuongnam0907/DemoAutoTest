@@ -37,22 +37,40 @@ void cWorker::doStart()
             mutex.unlock();
 
             if (abort || interrupt) break;
-            check = false;
+//            check = false;
 
             data = "";
             line = file.readLine(30);
             QStringList list = line.split(",");
-            if(list.size() == 3)
+            if(list.size() == 4)
             {
                 quint8 resultCode = 0xFF;
                 float x = list.at(0).toFloat();
                 float y = list.at(1).toFloat();
                 float z = list.at(2).toFloat();
+                int loopTimes = list.at(3).toInt();
 
-//                if (moveToXYZ(x, y, z)) packageData(x, y, z, "Card Detection", data, true);
-                if (moveToXYZ(x, y, z)) resultCode = mCardDetection->cardDetection(0x03, 0x01, 0x06, 0x06, 0x06, 0xFFFF, 500, &data);
-                if (resultCode == 0x00) packageData(x, y, z, "Card Detection", data, true);
-                else packageData(x, y, z, "Card Detection", data, false);
+                check = false;
+
+                if (loopTimes > 0) check = false;
+                else if (loopTimes == 0) check = true;
+                else loopTimes = 5;
+
+                if (moveToXYZ(x, y, z))
+                    while ((loopTimes--) || (check)) {
+                        mutex.lock();
+                        bool abort = _abort;
+                        bool interrupt = _interrupt;
+                        mutex.unlock();
+
+                        if (abort || interrupt) break;
+                        packageData(x, y, z, "Testing... ", QString::number(loopTimes,10), true);
+                        _sleep(1000);
+                    }
+
+//                if (moveToXYZ(x, y, z)) resultCode = mCardDetection->cardDetection(0x03, 0x01, 0x06, 0x06, 0x06, 0xFFFF, 500, &data);
+//                if (resultCode == 0x00) packageData(x, y, z, "Card Detection", data, true);
+//                else packageData(x, y, z, "Card Detection", data, false);
             }
         }
     }
@@ -159,8 +177,6 @@ bool cWorker::moveToXYZ(float x, float y, float z)
     float tempZ;
 
     bool isCheck = true;
-//    bool abort;
-//    bool interrupt;
 
     // Step 1: current x, current y, z + 20
     isCheck = true;
