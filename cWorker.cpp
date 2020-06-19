@@ -44,7 +44,7 @@ void cWorker::doStart()
             QStringList list = line.split(",");
             if(list.size() == 4)
             {
-                quint8 resultCode = 0xFF;
+                quint8 resultCode = FAIL;
                 float x = list.at(0).toFloat();
                 float y = list.at(1).toFloat();
                 float z = list.at(2).toFloat();
@@ -56,7 +56,7 @@ void cWorker::doStart()
                 else if (loopTimes == 0) check = true;
                 else loopTimes = 5;
 
-                if (moveToXYZ(x, y, z))
+                if (moveToXYZ(x, y, z)) {
                     while ((loopTimes--) || (check)) {
                         mutex.lock();
                         bool abort = _abort;
@@ -64,9 +64,16 @@ void cWorker::doStart()
                         mutex.unlock();
 
                         if (abort || interrupt) break;
-                        packageData(x, y, z, "Testing... ", QString::number(loopTimes,10), true);
-                        _sleep(1000);
+//                        testFlows(x, y, z, FLOW_CARD_DETECTION);
+//                        packageData(x, y, z, "Testing... ", QString::number(loopTimes,10), true);
+//                        _sleep(1000);
+                        resultCode = mCardDetection->cardDetection(0x03, 0x01, 0x06, 0x06, 0x06, 0xFFFF, 100, &data);
+                        if (resultCode == 0x00) packageData(x, y, z, "Card Detection", data, true);
+                        else packageData(x, y, z, "Card Detection", data, false);
+                        mRFControl->rfReset();
+//                        _sleep(200);
                     }
+                }
 
 //                if (moveToXYZ(x, y, z)) resultCode = mCardDetection->cardDetection(0x03, 0x01, 0x06, 0x06, 0x06, 0xFFFF, 500, &data);
 //                if (resultCode == 0x00) packageData(x, y, z, "Card Detection", data, true);
@@ -88,7 +95,7 @@ void cWorker::doOpen()
 
     resultCode = rfcapi_Init(portname, 0x02);
 
-    packageData(0,0,0, "Open Port Reader " + mPortReader, QByteArray::number(resultCode,10), true);
+    packageData(-999,-999,-999, "Open Port Reader " + mPortReader, /*QByteArray::number(resultCode,10)*/ "", true);
 }
 
 void cWorker::doClose()
@@ -97,12 +104,13 @@ void cWorker::doClose()
 
     resultCode = rfcapi_Deinit(portname);
 
-    packageData(0,0,0, "Close Port Reader " + mPortReader, QByteArray::number(resultCode,10), true);
+    packageData(-999,-999,-999, "Close Port Reader " + mPortReader, /*QByteArray::number(resultCode,10)*/ "", true);
 }
 
 void cWorker::mainLoop()
 {
     mCardDetection = new cCardDetection();
+    mRFControl = new cRFControl();
 //    mFile = new QFile(mFileName);
     forever {
         mutex.lock();
@@ -183,7 +191,7 @@ bool cWorker::moveToXYZ(float x, float y, float z)
     GetPose(mDobotId, &mPose);
     ptpCmd.x = mPose.x;
     ptpCmd.y = mPose.y;
-    ptpCmd.z = mPose.z + z + 30;
+    ptpCmd.z = mPose.z + 5;
     tempZ = ptpCmd.z;
 
     while (SetPTPCmd(mDobotId, &ptpCmd, true, NULL) != DobotCommunicate_NoError) {
@@ -239,6 +247,21 @@ bool cWorker::moveToXYZ(float x, float y, float z)
             equalFloat(pose.r, ptpCmd.r)) isCheck = false;
     }
     return true;
+}
+
+void cWorker::testFlows(float x, float y, float z, int flow)
+{
+//    quint8 resultCode = FAIL;
+//    QString data;
+//    switch (flow) {
+//    case FLOW_CARD_DETECTION:
+//        resultCode = mCardDetection->cardDetection(0x03, 0x01, 0x06, 0x06, 0x06, 0xFFFF, 500, &data);
+//        if (resultCode == 0x00) packageData(x, y, z, "Card Detection", data, true);
+//        else packageData(x, y, z, "Card Detection", data, false);
+////        packageData(x, y, z, "Testing... ", "", true);
+////        _sleep(1000);
+//        break;
+//    }
 }
 
 void cWorker::setOriginalCordiante(int dobotId, Pose pose)

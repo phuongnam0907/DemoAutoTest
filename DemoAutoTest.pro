@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui network xml serialport printsupport
+QT       += core gui network serialport printsupport
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -40,7 +40,9 @@ SOURCES += main.cpp\
     ../../xmsdk/src/mlsRFCAPI/src/rfcapiinit.c \
     ../../xmsdk/src/mlsRFCAPI/src/rfcapimiscellaneouscommands.c \
     ../../xmsdk/src/mlsUltil/src/mlsUltil.c \
-    cConvert.cpp
+    ../../xmsdk/src/mlsRFCAPI/src/rfcapirfcontrol.c \
+    cConvert.cpp \
+    cRFControl.cpp
 
 HEADERS  += mainwindow.h \
     cWorker.h \
@@ -65,7 +67,9 @@ HEADERS  += mainwindow.h \
     ../../xmsdk/src/mlsRFCAPI/inc/rfcapiinit.h \
     ../../xmsdk/src/mlsRFCAPI/inc/rfcapimiscellaneouscommands.h \
     ../../xmsdk/src/mlsUltil/inc/mlsUltil.h \
-    cConvert.h
+    ../../xmsdk/src/mlsRFCAPI/inc/rfcapirfcontrol.h \
+    cConvert.h \
+    cRFControl.h
 
 FORMS    += mainwindow.ui
 

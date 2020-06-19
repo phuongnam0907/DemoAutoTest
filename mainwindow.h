@@ -43,13 +43,17 @@ private slots:
     void on_stopButton_clicked();
 
     void on_slot_receiveResult(QVariantMap map);
+
     void on_portButton_clicked();
+
+    void on_generalButton_clicked();
 
 private:
     Ui::MainWindow *ui;
     QString mLogData;
     void updateLogData(float x, float y, float z, QString function, QString data, bool status);
     void updateLogFile(QString time, float x, float y, float z, QString function, QString data, bool status);
+    void updateLogSummary(QString time, QString function, bool status);
     void onConnection();
     void initDobot();
     void isConnectUI();
@@ -59,7 +63,9 @@ private:
     QTimer *m_searchTime;
     QDateTime currentTime;
     QFile *tempFile;
+    QFile *sumFile;
     QString mFileName;
+    QString mCurrentPortDobot;
     char mList[100];
     int dobotId;
 

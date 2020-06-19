@@ -14,13 +14,15 @@
 #include <QDebug>
 #include <QVariantMap>
 #include <cCardDetection.h>
+#include "cRFControl.h"
 #include <rfcapiinit.h>
 #include "DobotType.h"
 #include "DobotDll.h"
 
-#define SERIAL_PREFIX   "\\\\.\\"
-#define FAIL            0xFF
-#define OK              0x00
+#define SERIAL_PREFIX           "\\\\.\\"
+#define FAIL                    0xFF
+#define OK                      0x00
+#define FLOW_CARD_DETECTION     0
 
 class cWorker : public QObject
 {
@@ -122,6 +124,7 @@ private:
     Pose mOriginPose;
     QFile *mFile;
     cCardDetection *mCardDetection;
+    cRFControl *mRFControl;
     QString mPortReader;
     char *portname;
 
@@ -130,6 +133,8 @@ private:
     bool equalFloat(float f1, float f2);
 
     bool moveToXYZ(float x, float y, float z);
+
+    void testFlows(float x, float y, float z, int flow);
 
 public:
     void setOriginalCordiante(int dobotId, Pose pose);
