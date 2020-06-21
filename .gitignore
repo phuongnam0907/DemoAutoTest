@@ -3,3 +3,4 @@
 *.user*
 DemoAutoTest.pro.user
 ~$*.*
+~*.tmp
