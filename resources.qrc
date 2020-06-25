@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
         <file>resource/icon.ico</file>
+        <file>resource/CoodinateDefault.txt</file>
     </qresource>
 </RCC>

@@ -34,7 +34,17 @@ MainWindow::MainWindow(QWidget *parent) :
     thread->start();
 
     connect(worker, SIGNAL(valueChanged(QVariantMap)), this, SLOT(on_slot_receiveResult(QVariantMap)));
+    connect(this,SIGNAL(on_signal_updateStatus(quint8,QString)),this,SLOT(on_slot_updateStatus(quint8,QString)));
+    connect(worker,SIGNAL(finishTest()),this,SLOT(on_stopButton_clicked()));
     isConnectUI();
+
+    // Config UI
+    ui->groupBox_3->hide();
+    ui->groupBox_6->hide();
+    ui->lineEdit_1->setValidator(new QDoubleValidator(0.0, 9.0, 1, this));
+    ui->lineEdit_2->setValidator(new QDoubleValidator(0.0, 9.0, 1, this));
+    ui->lineEdit_3->setValidator(new QIntValidator(1, 999, this));
+    mFileName = ":/resource/CoodinateDefault.txt";
 }
 
 MainWindow::~MainWindow()
@@ -52,11 +62,9 @@ void MainWindow::on_connectButton_clicked()
     onConnection();
     if (connectStatus) {
         ui->connectButton->setText("Disconnect");
-        updateLogData(-999,-999,-999,"Connect Dobot Port " + mCurrentPortDobot,"",connectStatus);
     }
     else {
         ui->connectButton->setText("Connect");
-        updateLogData(-999,-999,-999,"Disconnect Dobot Port " + mCurrentPortDobot,"",!connectStatus);
     }
     isConnectUI();
 }
@@ -89,8 +97,8 @@ void MainWindow::updateLogData(float x, float y, float z, QString function, QStr
     if (!data.isEmpty()) mLogData += "<b>Data:</b> " + data + "<br>";
     ui->textEdit->setText(mLogData);
     ui->textEdit->moveCursor(QTextCursor::End);
-    updateLogFile(Time, x, y, z, function, data, status);
-    updateLogSummary(Time, function, status);
+//    updateLogFile(Time, x, y, z, function, data, status);
+//    updateLogSummary(Time, function, status);
 }
 
 void MainWindow::updateLogFile(QString time, float x, float y, float z, QString function, QString data, bool status)
@@ -130,13 +138,20 @@ void MainWindow::onConnection()
     if (!connectStatus) {
         if (ConnectDobot(ui->comboBox->currentText().toLatin1().data(), 115200, fwType, version, &dobotId) != DobotConnect_NoError) {
             QMessageBox::information(this, tr("Error"), tr("Connect dobot error!!!"), QMessageBox::Ok);
+            updateLogData(-999,-999,-999,"Connect Dobot Port " + mCurrentPortDobot,"",false);
+            emit on_signal_updateStatus(3, "");
             return;
         }
         connectStatus = true;
         initDobot();
+        emit on_signal_updateStatus(0, "CONNECT DOBOT");
+        updateLogData(-999,-999,-999,"Connect Dobot Port " + mCurrentPortDobot,"",connectStatus);
     } else {
         connectStatus = false;
         DisconnectDobot(dobotId);
+        emit on_signal_updateStatus(0, "DISCONNECT DOBOT");
+        updateLogData(-999,-999,-999,"Disconnect Dobot Port " + mCurrentPortDobot,"",!connectStatus);
+
     }
 }
 
@@ -238,8 +253,11 @@ void MainWindow::isConnectUI()
     ui->textEdit_2->setEnabled(connectStatus && connectReader);
     ui->startButton->setEnabled(connectStatus && connectReader);
     ui->stopButton->setEnabled(connectStatus && connectReader);
-    if (!(ui->textEdit_2->toPlainText().isEmpty()) && connectStatus && connectReader) ui->groupBox_4->setEnabled(true);
-    else ui->groupBox_4->setEnabled(false);
+//    if (!(ui->textEdit_2->toPlainText().isEmpty()) && connectStatus && connectReader) ui->groupBox_4->setEnabled(true);
+//    else ui->groupBox_4->setEnabled(false);
+    ui->groupBox_4->setEnabled(connectStatus && connectReader);
+    ui->groupBox_7->setEnabled(connectStatus && connectReader);
+    ui->stopButton->setEnabled(false);
 }
 
 QString MainWindow::getCurrentTime()
@@ -274,25 +292,41 @@ void MainWindow::on_loadButton_clicked()
 
 void MainWindow::on_setButton_clicked()
 {
+    isSetCoordinate = true;
     Pose pose;
     GetPose(dobotId, &pose);
     mPose->x = pose.x;
     mPose->y = pose.y;
     mPose->z = pose.z;
     mPose->r = pose.r;
-    updateLogData(mPose->x, mPose->y, mPose->z, "Set Original Cordinate", "", true);
+    updateLogData(mPose->x, mPose->y, mPose->z, "Set Original Cordinate", "", isSetCoordinate);
     worker->setOriginalCordiante(dobotId, pose);
+    emit on_signal_updateStatus(0, "SET ORIGINAL COORDINATES");
 }
 
 void MainWindow::on_startButton_clicked()
 {
-    worker->setFileName(mFileName);
-    worker->requestMethod(cWorker::Start);
+    if (isSetCoordinate){
+        worker->setFileName(mFileName);
+        worker->requestMethod(cWorker::Start);
+
+        ui->groupBox_7->setEnabled(false);
+        ui->setButton->setEnabled(false);
+        ui->startButton->setEnabled(false);
+        ui->stopButton->setEnabled(true);
+    } else QMessageBox::information(this,"Cannot Start Testing", "Not set original coordinates...<br>Please drag Dobot robot arm to center of reader<br>Then click <b>SET ORIGINAL COORDINATE</b>");
 }
 
 void MainWindow::on_stopButton_clicked()
 {
     worker->requestMethod(cWorker::Stop);
+
+    ui->groupBox_7->setEnabled(true);
+    ui->setButton->setEnabled(true);
+    ui->startButton->setEnabled(true);
+    ui->stopButton->setEnabled(false);
+
+    emit on_signal_updateStatus(2, "");
 }
 
 void MainWindow::on_slot_receiveResult(QVariantMap map)
@@ -314,11 +348,13 @@ void MainWindow::on_portButton_clicked()
         ui->portButton->setText("Disconnect");
         worker->setPortReader(ui->comboBox_4->currentText());
         worker->requestMethod(cWorker::Open);
+        emit on_signal_updateStatus(0, "CONNECT READER");
     }
     else {
         connectReader = false;
         worker->requestMethod(cWorker::Close);
         ui->portButton->setText("Connect");
+        emit on_signal_updateStatus(0, "DISCONNECT READER");
     }
     isConnectUI();
 }
@@ -333,4 +369,68 @@ void MainWindow::on_generalButton_clicked()
         msg.setText("Save file successfully!!!");
         msg.exec();
     }
+}
+
+void MainWindow::on_slot_updateStatus(quint8 type, QString text)
+{
+    switch (type) {
+    case 0:
+        ui->status->setText("<font color=blue>" + text +"</font>");
+        break;
+    case 1:
+        ui->status->setText("<font color=green>" + text +"</font>");
+        break;
+    case 2:
+        ui->status->setText("<font color=red>STOP!!</font>");
+        break;
+    case 3:
+        ui->status->setText("<font color=brown>FAILED</font>");
+    }
+}
+
+void MainWindow::on_submitButton_clicked()
+{
+//    float radius = ui->lineEdit_1->text().toFloat();
+//    float zstep = ui->lineEdit_2->text().toFloat();
+//    quint16 repeat = ui->lineEdit_3->text().toUInt();
+
+//    if (ui->lineEdit_1->text().isEmpty()) {
+//        radius = 1.0;
+//        ui->lineEdit_1->setText("1.0");
+//    }
+//    if (ui->lineEdit_2->text().isEmpty()) {
+//        zstep = 1.0;
+//        ui->lineEdit_2->setText("1.0");
+//    }
+//    if (ui->lineEdit_3->text().isEmpty()) {
+//        repeat = 10;
+//        ui->lineEdit_3->setText("10");
+//    }
+
+//    if ((radius > 9.0) || (zstep > 9.0) || (repeat == 0)) {
+//        QString error = "";
+//        if (radius > 9.0) error += "Range of radius is from 0.0cm to 9.0cm!<br>";
+//        if (zstep > 9.0) error += "Range of Z step is from 0.0cm to 9.0cm!<br>";
+//        if (repeat == 0) error += "Repeat times from 0 to 999!<br>";
+//        emit on_signal_updateStatus(3,"");
+//        QMessageBox::critical(this, "Input Error", error);
+//    } else {
+//        emit on_signal_updateStatus(0,"INPUT SUCCESS");
+//    }
+
+//    QFile file(":/resource/CoodinateDefault.txt");
+//    if(!file.open(QIODevice::ReadOnly)) {
+//        QMessageBox::information(0, "error", file.errorString());
+//    }
+
+//    QTextStream in(&file);
+
+//    while(!in.atEnd()) {
+//        QString line = in.readLine();
+//        QStringList fields = line.split(",");
+//        qDebug() << fields;
+//    }
+
+//    file.close();
+
 }

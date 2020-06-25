@@ -82,6 +82,14 @@ void cWorker::doStart()
         }
     }
     mFile->close();
+    QFile fi(desktopPath + "/AutoTestReport_123.csv");
+    if (fi.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&fi);
+        out << "hello112321";
+        fi.close();
+    }
+
+    emit finishTest();
 }
 
 void cWorker::doStop()

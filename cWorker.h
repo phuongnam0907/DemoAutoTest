@@ -13,6 +13,8 @@
 #include <QThread>
 #include <QDebug>
 #include <QVariantMap>
+#include <QStandardPaths>
+#include <QTextStream>
 #include <cCardDetection.h>
 #include "cRFControl.h"
 #include <rfcapiinit.h>
@@ -111,6 +113,8 @@ signals:
      * @brief This signal is emitted when process is finished (either by counting 60 sec or being aborted)
      */
     void finished();
+
+    void finishTest();
 public slots:
     /**
      * @brief Waits for a method to be requested then executes it, then waits again
@@ -127,6 +131,7 @@ private:
     cRFControl *mRFControl;
     QString mPortReader;
     char *portname;
+    QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
 
     void packageData(float x, float y, float z, QString function, QString data, bool status);
 

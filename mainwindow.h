@@ -11,6 +11,7 @@
 #include <QFile>
 #include <QThread>
 #include <QMessageBox>
+#include <QStandardPaths>
 #include "cConvert.h"
 #include "DobotDll.h"
 #include "DobotType.h"
@@ -28,8 +29,12 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+signals:
+    void on_signal_updateStatus(quint8 type, QString text);
+
 private slots:
     void on_connectButton_clicked();
+
     void searchPortDobot(void);
 
     void on_saveButton_clicked();
@@ -48,6 +53,10 @@ private slots:
 
     void on_generalButton_clicked();
 
+    void on_slot_updateStatus(quint8 type, QString text);
+
+    void on_submitButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     QString mLogData;
@@ -60,12 +69,14 @@ private:
 
     bool connectStatus = false;
     bool connectReader = false;
+    bool isSetCoordinate = false;
     QTimer *m_searchTime;
     QDateTime currentTime;
     QFile *tempFile;
     QFile *sumFile;
     QString mFileName;
     QString mCurrentPortDobot;
+    QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     char mList[100];
     int dobotId;
 
