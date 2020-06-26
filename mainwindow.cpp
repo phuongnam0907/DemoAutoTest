@@ -39,11 +39,13 @@ MainWindow::MainWindow(QWidget *parent) :
     isConnectUI();
 
     // Config UI
+    ui->groupBox_4->setEnabled(true);
+    ui->groupBox_7->setEnabled(true);
     ui->groupBox_3->hide();
     ui->groupBox_6->hide();
-    ui->lineEdit_1->setValidator(new QDoubleValidator(0.0, 9.0, 1, this));
-    ui->lineEdit_2->setValidator(new QDoubleValidator(0.0, 9.0, 1, this));
-    ui->lineEdit_3->setValidator(new QIntValidator(1, 999, this));
+//    ui->lineEdit_1->setValidator(new QDoubleValidator(0.0, 9.0, 1, this));
+//    ui->lineEdit_2->setValidator(new QDoubleValidator(0.0, 9.0, 1, this));
+//    ui->lineEdit_3->setValidator(new QIntValidator(1, 999, this));
     mFileName = ":/resource/CoodinateDefault.txt";
 }
 
@@ -56,6 +58,8 @@ MainWindow::~MainWindow()
     delete thread;
     delete worker;
     delete ui;
+    QFile f(tempDataFile);
+    f.remove();
 }
 void MainWindow::on_connectButton_clicked()
 {
@@ -390,33 +394,34 @@ void MainWindow::on_slot_updateStatus(quint8 type, QString text)
 
 void MainWindow::on_submitButton_clicked()
 {
-//    float radius = ui->lineEdit_1->text().toFloat();
-//    float zstep = ui->lineEdit_2->text().toFloat();
-//    quint16 repeat = ui->lineEdit_3->text().toUInt();
+    float radius = ui->lineEdit_1->text().toFloat();
+    float zstep = ui->lineEdit_2->text().toFloat();
+    quint16 repeat = ui->lineEdit_3->text().toUInt();
 
-//    if (ui->lineEdit_1->text().isEmpty()) {
-//        radius = 1.0;
-//        ui->lineEdit_1->setText("1.0");
-//    }
-//    if (ui->lineEdit_2->text().isEmpty()) {
-//        zstep = 1.0;
-//        ui->lineEdit_2->setText("1.0");
-//    }
-//    if (ui->lineEdit_3->text().isEmpty()) {
-//        repeat = 10;
-//        ui->lineEdit_3->setText("10");
-//    }
+    if (ui->lineEdit_1->text().isEmpty()) {
+        radius = 1.0;
+        ui->lineEdit_1->setText("1.0");
+    }
+    if (ui->lineEdit_2->text().isEmpty()) {
+        zstep = 1.0;
+        ui->lineEdit_2->setText("1.0");
+    }
+    if (ui->lineEdit_3->text().isEmpty()) {
+        repeat = 10;
+        ui->lineEdit_3->setText("10");
+    }
 
-//    if ((radius > 9.0) || (zstep > 9.0) || (repeat == 0)) {
-//        QString error = "";
-//        if (radius > 9.0) error += "Range of radius is from 0.0cm to 9.0cm!<br>";
-//        if (zstep > 9.0) error += "Range of Z step is from 0.0cm to 9.0cm!<br>";
-//        if (repeat == 0) error += "Repeat times from 0 to 999!<br>";
-//        emit on_signal_updateStatus(3,"");
-//        QMessageBox::critical(this, "Input Error", error);
-//    } else {
-//        emit on_signal_updateStatus(0,"INPUT SUCCESS");
-//    }
+    if ((radius > 9.0) || (zstep > 9.0) || (repeat == 0)) {
+        QString error = "";
+        if (radius > 9.0) error += "Range of radius is from 0.0cm to 9.0cm!<br>";
+        if (zstep > 9.0) error += "Range of Z step is from 0.0cm to 9.0cm!<br>";
+        if (repeat == 0) error += "Repeat times from 1 to 999!<br>";
+        emit on_signal_updateStatus(3,"");
+        QMessageBox::critical(this, "Input Error", error);
+        return;
+    } else {
+        emit on_signal_updateStatus(0,"INPUT SUCCESS");
+    }
 
 //    QFile file(":/resource/CoodinateDefault.txt");
 //    if(!file.open(QIODevice::ReadOnly)) {
@@ -429,6 +434,49 @@ void MainWindow::on_submitButton_clicked()
 //        QString line = in.readLine();
 //        QStringList fields = line.split(",");
 //        qDebug() << fields;
+//    }
+
+    QList<quint8> xList;
+    QList<quint8> yList;
+    QList<quint8> zList;
+
+    for (int k = 0; k <= MAX_SIZE_X; k += (quint8)(radius*10)) xList.append(k);
+    for (int k = 0; k <= MAX_SIZE_Y; k += (quint8)(radius*10)) yList.append(k);
+    for (int k = 0; k <= MAX_SIZE_Z; k += (quint8)(zstep*10)) zList.append(k);
+
+    qDebug() << tempDataFile;
+    QFile fi(tempDataFile);
+    if (fi.open(QIODevice::WriteOnly | QIODevice::Text)){
+        QTextStream out(&fi);
+        int tempIndex = zList.size();
+        while(tempIndex--){
+            for (int j = 0; j < xList.size(); j++) {
+                if ((xList.at(j) == 0) && (yList.at(j) == 0)) out << 0 << "," << 0 << "," << zList.at(tempIndex) << "," << 1 << endl;
+                else for (int i = 0; i < repeat; i++) {
+                    out << xList.at(j) << "," << 0 << "," << zList.at(tempIndex) << "," << 1 << endl;
+                    out << 0 << "," << yList.at(j) << "," << zList.at(tempIndex) << "," << 1 << endl;
+                    out << -xList.at(j) << "," << 0 << "," << zList.at(tempIndex) << "," << 1 << endl;
+                    out << 0 << "," << -yList.at(j) << "," << zList.at(tempIndex) << "," << 1 << endl;
+                }
+            }
+        }
+
+        fi.close();
+    }
+
+    mFileName = tempDataFile;
+
+//    qDebug() << xList;
+//    qDebug() << yList;
+//    qDebug() << zList;
+
+//    QList<QStringList> list;
+
+//    QFile fi(desktopPath + "/AutoTestReport_123.csv");
+//    if (fi.open(QIODevice::WriteOnly | QIODevice::Text)){
+//        QTextStream out(&fi);
+//        out << "hello112321";
+//        fi.close();
 //    }
 
 //    file.close();

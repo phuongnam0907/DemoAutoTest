@@ -17,6 +17,10 @@
 #include "DobotType.h"
 #include "cWorker.h"
 
+#define MAX_SIZE_X      40
+#define MAX_SIZE_Y      90
+#define MAX_SIZE_Z      90
+
 namespace Ui {
 class MainWindow;
 }
@@ -77,6 +81,7 @@ private:
     QString mFileName;
     QString mCurrentPortDobot;
     QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
+    QString tempDataFile = QDir::tempPath() + "/Auto_Generate_Coodinate.txt";
     char mList[100];
     int dobotId;
 
