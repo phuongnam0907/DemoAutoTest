@@ -39,13 +39,9 @@ MainWindow::MainWindow(QWidget *parent) :
     isConnectUI();
 
     // Config UI
-    ui->groupBox_4->setEnabled(true);
-    ui->groupBox_7->setEnabled(true);
     ui->groupBox_3->hide();
     ui->groupBox_6->hide();
-//    ui->lineEdit_1->setValidator(new QDoubleValidator(0.0, 9.0, 1, this));
-//    ui->lineEdit_2->setValidator(new QDoubleValidator(0.0, 9.0, 1, this));
-//    ui->lineEdit_3->setValidator(new QIntValidator(1, 999, this));
+    ui->setButton->hide();
     mFileName = ":/resource/CoodinateDefault.txt";
 }
 
@@ -148,10 +144,20 @@ void MainWindow::onConnection()
         }
         connectStatus = true;
         initDobot();
+
+        HOMECmd homeCMD;
+        SetHOMECmd(dobotId, &homeCMD, false, NULL);
+
         emit on_signal_updateStatus(0, "CONNECT DOBOT");
         updateLogData(-999,-999,-999,"Connect Dobot Port " + mCurrentPortDobot,"",connectStatus);
     } else {
         connectStatus = false;
+
+        JOGCmd jogCMD;
+        jogCMD.isJoint = 1;
+        jogCMD.cmd = 5;
+        SetJOGCmd(dobotId, &jogCMD, false, NULL);
+
         DisconnectDobot(dobotId);
         emit on_signal_updateStatus(0, "DISCONNECT DOBOT");
         updateLogData(-999,-999,-999,"Disconnect Dobot Port " + mCurrentPortDobot,"",!connectStatus);
@@ -310,7 +316,9 @@ void MainWindow::on_setButton_clicked()
 
 void MainWindow::on_startButton_clicked()
 {
+    if (!isSetCoordinate) on_setButton_clicked();
     if (isSetCoordinate){
+        emit on_signal_updateStatus(1, "TESTING...");
         worker->setFileName(mFileName);
         worker->requestMethod(cWorker::Start);
 
@@ -318,7 +326,7 @@ void MainWindow::on_startButton_clicked()
         ui->setButton->setEnabled(false);
         ui->startButton->setEnabled(false);
         ui->stopButton->setEnabled(true);
-    } else QMessageBox::information(this,"Cannot Start Testing", "Not set original coordinates...<br>Please drag Dobot robot arm to center of reader<br>Then click <b>SET ORIGINAL COORDINATE</b>");
+    }
 }
 
 void MainWindow::on_stopButton_clicked()
@@ -413,7 +421,7 @@ void MainWindow::on_submitButton_clicked()
 
     if ((radius > 9.0) || (zstep > 9.0) || (repeat == 0)) {
         QString error = "";
-        if (radius > 9.0) error += "Range of radius is from 0.0cm to 9.0cm!<br>";
+        if (radius > 5.0) error += "Range of radius is from 0.0cm to 5.0cm!<br>";
         if (zstep > 9.0) error += "Range of Z step is from 0.0cm to 9.0cm!<br>";
         if (repeat == 0) error += "Repeat times from 1 to 999!<br>";
         emit on_signal_updateStatus(3,"");
@@ -423,40 +431,27 @@ void MainWindow::on_submitButton_clicked()
         emit on_signal_updateStatus(0,"INPUT SUCCESS");
     }
 
-//    QFile file(":/resource/CoodinateDefault.txt");
-//    if(!file.open(QIODevice::ReadOnly)) {
-//        QMessageBox::information(0, "error", file.errorString());
-//    }
-
-//    QTextStream in(&file);
-
-//    while(!in.atEnd()) {
-//        QString line = in.readLine();
-//        QStringList fields = line.split(",");
-//        qDebug() << fields;
-//    }
-
     QList<quint8> xList;
     QList<quint8> yList;
-    QList<quint8> zList;
+    QList<qint8> zList;
 
     for (int k = 0; k <= MAX_SIZE_X; k += (quint8)(radius*10)) xList.append(k);
     for (int k = 0; k <= MAX_SIZE_Y; k += (quint8)(radius*10)) yList.append(k);
-    for (int k = 0; k <= MAX_SIZE_Z; k += (quint8)(zstep*10)) zList.append(k);
+    for (int k = 0; k <= MAX_SIZE_Z; k += (quint8)(zstep*10)) zList.append(-k);
 
     qDebug() << tempDataFile;
     QFile fi(tempDataFile);
     if (fi.open(QIODevice::WriteOnly | QIODevice::Text)){
         QTextStream out(&fi);
-        int tempIndex = zList.size();
-        while(tempIndex--){
+        for (int i = 0; i < zList.size(); i++){
             for (int j = 0; j < xList.size(); j++) {
-                if ((xList.at(j) == 0) && (yList.at(j) == 0)) out << 0 << "," << 0 << "," << zList.at(tempIndex) << "," << 1 << endl;
-                else for (int i = 0; i < repeat; i++) {
-                    out << xList.at(j) << "," << 0 << "," << zList.at(tempIndex) << "," << 1 << endl;
-                    out << 0 << "," << yList.at(j) << "," << zList.at(tempIndex) << "," << 1 << endl;
-                    out << -xList.at(j) << "," << 0 << "," << zList.at(tempIndex) << "," << 1 << endl;
-                    out << 0 << "," << -yList.at(j) << "," << zList.at(tempIndex) << "," << 1 << endl;
+                if ((xList.at(j) == 0) && (yList.at(j) == 0)) out << 0 << "," << 0 << "," << zList.at(i) << "," << repeat << endl;
+                else
+                {
+                    out << xList.at(j) << "," << 0 << "," << zList.at(i) << "," << repeat << endl;
+                    out << 0 << "," << yList.at(j) << "," << zList.at(i) << "," << repeat << endl;
+                    out << -xList.at(j) << "," << 0 << "," << zList.at(i) << "," << repeat << endl;
+                    out << 0 << "," << -yList.at(j) << "," << zList.at(i) << "," << repeat << endl;
                 }
             }
         }
@@ -465,20 +460,5 @@ void MainWindow::on_submitButton_clicked()
     }
 
     mFileName = tempDataFile;
-
-//    qDebug() << xList;
-//    qDebug() << yList;
-//    qDebug() << zList;
-
-//    QList<QStringList> list;
-
-//    QFile fi(desktopPath + "/AutoTestReport_123.csv");
-//    if (fi.open(QIODevice::WriteOnly | QIODevice::Text)){
-//        QTextStream out(&fi);
-//        out << "hello112321";
-//        fi.close();
-//    }
-
-//    file.close();
-
+    worker->setFileName(mFileName);
 }

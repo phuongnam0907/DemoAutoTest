@@ -17,9 +17,9 @@
 #include "DobotType.h"
 #include "cWorker.h"
 
-#define MAX_SIZE_X      40
+#define MAX_SIZE_X      50
 #define MAX_SIZE_Y      90
-#define MAX_SIZE_Z      90
+#define MAX_SIZE_Z      140
 
 namespace Ui {
 class MainWindow;

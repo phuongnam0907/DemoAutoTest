@@ -138,9 +138,6 @@ private:
     bool equalFloat(float f1, float f2);
 
     bool moveToXYZ(float x, float y, float z);
-
-    void testFlows(float x, float y, float z, int flow);
-
 public:
     void setOriginalCordiante(int dobotId, Pose pose);
     void setPortReader(QString portName);
