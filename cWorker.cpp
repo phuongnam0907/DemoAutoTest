@@ -30,6 +30,7 @@ void cWorker::doStart()
     bool isDetected = false;
     float currentZ = 1;
     float percentOk = 0.0;
+    mListResult.clear();
     if (mFile->open(QIODevice::ReadOnly)) {
         while (!file.atEnd()) {
             mutex.lock();
@@ -67,14 +68,14 @@ void cWorker::doStart()
                             mRFControl->rfReset();
                         }
 
-                        percentOk = (float)countOk/(float)repeat;
+                        // percentOk = (float)countOk/(float)repeat;
 
-                        if (percentOk >= 0.9) packageData(x, y, z, "Card Detection", data, true);
-                        else packageData(x, y, z, "Card Detection", data, false);
+                        // if (percentOk >= 0.9) packageData(x, y, z, "Card Detection", data, true);
+                        // else packageData(x, y, z, "Card Detection", data, false);
 
-                        if (isDetected == true){
+                        // if (isDetected == true){
 
-                        }
+                        // }
                     }
                 }
                 currentZ = z;
@@ -83,6 +84,22 @@ void cWorker::doStart()
                     isDetected = true;
                 }
 
+                if (isDetected == true)
+                {
+                    percentOk = (float)countOk/(float)repeat;
+                    cExportClass myClass;
+                    myClass.setX(x);
+                    myClass.setY(x);
+                    myClass.setZ(x);
+                    if (percentOk >= 0.9){
+                        myClass.setResult(true);
+                    } else {
+                        myClass.setResult(false);
+                    }
+                    mListResult.append(myClass);
+                }
+                
+
             }
         }
     }
@@ -90,13 +107,6 @@ void cWorker::doStart()
     moveToXYZ(0, 0, 0);
 
     emit finishTest();
-    //    QFile fi(desktopPath + "/AutoTestReport_123.csv");
-    //    if (fi.open(QIODevice::WriteOnly | QIODevice::Text)){
-    //        QTextStream out(&fi);
-    //        out << "hello112321";
-    //        fi.close();
-    //    }
-
 }
 
 void cWorker::doStop()
@@ -120,6 +130,11 @@ void cWorker::doClose()
     resultCode = rfcapi_Deinit(portname);
 
     packageData(-999,-999,-999, "Close Port Reader " + mPortReader, "", true);
+}
+
+void cWorker::doExport()
+{
+    exportReport();
 }
 
 void cWorker::mainLoop()
@@ -154,6 +169,9 @@ void cWorker::mainLoop()
             break;
         case Close:
             doClose();
+            break;
+        case Export:
+            doExport();
             break;
         }
     }
@@ -285,4 +303,60 @@ void cWorker::setPortReader(QString portName)
 void cWorker::setFileName(QString fileName)
 {
     mFileName = fileName;
+}
+
+void cWorker::setFileExportName(QString fileName)
+{
+    mFileExportName = fileName;
+}
+
+void cWorker::exportReport(){
+    if (mListResult.isEmpty()){
+        // return
+    } else {
+        QStringList strList, strTitle;
+        int i, cycle;
+        float firstZ = mListResult[0].getZ();
+        QString fileName = mFileExportName;
+
+        // QString filter = "CSV (*.csv)";
+        // QString fileName = QFileDialog::getSaveFileName(this, "Save report file", QDir::homePath(), filter);
+        // QString fileName = QFileDialog::getSaveFileName(this, "Save report file", QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), filter);
+
+        i = 0;
+        while(true){
+            if(firstZ == mListResult[i].getZ()) cycle++;
+            else break;
+            i++;
+        }
+
+        strTitle.append("Z");
+        for (i = 0; i < cycle; i++) {
+            QString strTemp = "\"(" + QString::number(mListResult[i].getX()) + ((mListResult[i].getX() != 0)?"cm":"") + "," +
+                    QString::number(mListResult[i].getY()) + ((mListResult[i].getY() != 0)?"cm":"") + ")\"";
+            strTitle.append(strTemp);
+        }
+
+        QFile exportFile(fileName);
+        if (exportFile.open(QIODevice::WriteOnly | QIODevice::Text)){
+            QTextStream out(&exportFile);
+            out << strTitle.join(",") << endl;
+            i = 0;
+            while (i < mListResult.size())
+            {
+                if (mListResult[i].getResult()) strList.append("P");
+                else strList.append("F");
+                
+                if (((firstZ != mListResult[i].getZ()) && ((i+1)%cycle == 0)) || ((i+1)%cycle == 0) || ((i+1) == mListResult.size())) {
+                    out << mListResult[i].getZ() << "," << strList.join(",") << endl;
+                    strList.clear();
+                    firstZ = mListResult[i].getZ();
+                }
+                i++;
+            }
+            exportFile.close();
+        }
+
+        // QMessageBox
+    }
 }

@@ -18,6 +18,7 @@
 #include <cCardDetection.h>
 #include "cRFControl.h"
 #include <rfcapiinit.h>
+#include "cExportClass.h"
 #include "DobotType.h"
 #include "DobotDll.h"
 
@@ -39,7 +40,8 @@ public:
         Start = 1,
         Stop = 2,
         Open = 3,
-        Close = 4
+        Close = 4,
+        Export = 5
     };
     /**
      * @brief Requests for the method @em method to be executed
@@ -103,6 +105,13 @@ private:
      * Counting is interrupted if #_abort or #_interrupt is set to true.
      */
     void doClose();
+    /**
+     * @brief 3rd method which could be called
+     *
+     * Counts 30 sec in this example.
+     * Counting is interrupted if #_abort or #_interrupt is set to true.
+     */
+    void doExport();
 
 signals:
     /**
@@ -130,7 +139,9 @@ private:
     cCardDetection *mCardDetection;
     cRFControl *mRFControl;
     QString mPortReader;
+    QString mFileExportName;
     char *portname;
+    QList<cExportClass> mListResult;
     QString desktopPath = QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
 
     void packageData(float x, float y, float z, QString function, QString data, bool status);
@@ -138,10 +149,13 @@ private:
     bool equalFloat(float f1, float f2);
 
     bool moveToXYZ(float x, float y, float z);
+
+    void exportReport();
 public:
     void setOriginalCordiante(int dobotId, Pose pose);
     void setPortReader(QString portName);
     void setFileName(QString fileName);
+    void setFileExportName(QString fileName);
 };
 
 #endif // CWORKER_H
