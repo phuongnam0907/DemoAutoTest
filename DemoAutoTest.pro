@@ -42,7 +42,8 @@ SOURCES += main.cpp\
     ../../xmsdk/src/mlsUltil/src/mlsUltil.c \
     ../../xmsdk/src/mlsRFCAPI/src/rfcapirfcontrol.c \
     cConvert.cpp \
-    cRFControl.cpp
+    cRFControl.cpp \
+    cExportClass.cpp
 
 HEADERS  += mainwindow.h \
     cWorker.h \
@@ -69,7 +70,8 @@ HEADERS  += mainwindow.h \
     ../../xmsdk/src/mlsUltil/inc/mlsUltil.h \
     ../../xmsdk/src/mlsRFCAPI/inc/rfcapirfcontrol.h \
     cConvert.h \
-    cRFControl.h
+    cRFControl.h \
+    cExportClass.h
 
 FORMS    += mainwindow.ui
 

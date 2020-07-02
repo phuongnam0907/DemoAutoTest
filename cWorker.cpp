@@ -69,8 +69,12 @@ void cWorker::doStart()
 
                         percentOk = (float)countOk/(float)repeat;
 
-                        if (percentOk < 0.5) packageData(x, y, z, "Card Detection", data, true);
+                        if (percentOk >= 0.9) packageData(x, y, z, "Card Detection", data, true);
                         else packageData(x, y, z, "Card Detection", data, false);
+
+                        if (isDetected == true){
+
+                        }
                     }
                 }
                 currentZ = z;
