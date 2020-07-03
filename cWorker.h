@@ -27,6 +27,10 @@
 #define OK                      0x00
 #define FLOW_CARD_DETECTION     0
 
+#define MAX_SIZE_X      40
+#define MAX_SIZE_Y      90
+#define MAX_SIZE_Z      170
+
 class cWorker : public QObject
 {
     Q_OBJECT

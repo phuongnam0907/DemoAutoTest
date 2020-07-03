@@ -5,6 +5,11 @@ cExportClass::cExportClass()
 
 }
 
+cExportClass::~cExportClass()
+{
+
+}
+
 void cExportClass::setX(float x)
 {
     mX = x;

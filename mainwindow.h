@@ -17,9 +17,9 @@
 #include "DobotType.h"
 #include "cWorker.h"
 
-#define MAX_SIZE_X      50
+#define MAX_SIZE_X      40
 #define MAX_SIZE_Y      90
-#define MAX_SIZE_Z      140
+#define MAX_SIZE_Z      170
 
 namespace Ui {
 class MainWindow;
@@ -60,6 +60,8 @@ private slots:
     void on_slot_updateStatus(quint8 type, QString text);
 
     void on_submitButton_clicked();
+
+    void on_pushButton_clicked();
 
 private:
     Ui::MainWindow *ui;

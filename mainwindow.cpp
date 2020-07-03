@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    this->setWindowTitle("Automation Test");
+    this->setWindowTitle("Automation Test Tool");
 
     ui->comboBox_2->addItem("115200");
     ui->comboBox_3->addItem("115200");
@@ -175,18 +175,11 @@ void MainWindow::initDobot()
 
     char deviceSN[64];
     GetDeviceSN(dobotId, deviceSN, sizeof(deviceSN));
-//    ui->deviceSNLabel->setText(deviceSN);
-    qDebug() << "deviceSN: " << deviceSN;
-
     char deviceName[64];
     GetDeviceName(dobotId, deviceName, sizeof(deviceName));
-//    ui->DeviceNameLabel->setText(deviceName);
-    qDebug() << "deviceName: " << deviceName;
 
     uint8_t majorVersion, minorVersion, revision;
     GetDeviceVersion(dobotId, &majorVersion, &minorVersion, &revision);
-//    ui->DeviceInfoLabel->setText(QString::number(majorVersion) + "." + QString::number(minorVersion) + "." + QString::number(revision));
-    qDebug() << "version: " << QString::number(majorVersion) + "." + QString::number(minorVersion) + "." + QString::number(revision);
 
     QTextStream out(tempFile);
     if(tempFile->open(QIODevice::WriteOnly)){
@@ -267,6 +260,7 @@ void MainWindow::isConnectUI()
 //    else ui->groupBox_4->setEnabled(false);
     ui->groupBox_4->setEnabled(connectStatus && connectReader);
     ui->groupBox_7->setEnabled(connectStatus && connectReader);
+    ui->groupBox_8->setEnabled(connectStatus && connectReader);
     ui->stopButton->setEnabled(false);
 }
 
@@ -305,10 +299,12 @@ void MainWindow::on_setButton_clicked()
     isSetCoordinate = true;
     Pose pose;
     GetPose(dobotId, &pose);
-    mPose->x = pose.x;
+    mPose->x = pose.x + 20;
     mPose->y = pose.y;
-    mPose->z = pose.z;
+    mPose->z = pose.z + 25;
     mPose->r = pose.r;
+    pose.x += 20;
+    pose.z += 25;
     updateLogData(mPose->x, mPose->y, mPose->z, "Set Original Cordinate", "", isSetCoordinate);
     worker->setOriginalCordiante(dobotId, pose);
     emit on_signal_updateStatus(0, "SET ORIGINAL COORDINATES");
@@ -322,6 +318,7 @@ void MainWindow::on_startButton_clicked()
         worker->setFileName(mFileName);
         worker->requestMethod(cWorker::Start);
 
+        ui->groupBox_8->setEnabled(false);
         ui->groupBox_7->setEnabled(false);
         ui->setButton->setEnabled(false);
         ui->startButton->setEnabled(false);
@@ -333,6 +330,7 @@ void MainWindow::on_stopButton_clicked()
 {
     worker->requestMethod(cWorker::Stop);
 
+    ui->groupBox_8->setEnabled(true);
     ui->groupBox_7->setEnabled(true);
     ui->setButton->setEnabled(true);
     ui->startButton->setEnabled(true);
@@ -421,7 +419,7 @@ void MainWindow::on_submitButton_clicked()
 
     if ((radius > 9.0) || (zstep > 9.0) || (repeat == 0)) {
         QString error = "";
-        if (radius > 5.0) error += "Range of radius is from 0.0cm to 5.0cm!<br>";
+        if (radius > 5.0) error += "Range of radius is from 0.0cm to 4.0cm!<br>";
         if (zstep > 9.0) error += "Range of Z step is from 0.0cm to 9.0cm!<br>";
         if (repeat == 0) error += "Repeat times from 1 to 999!<br>";
         emit on_signal_updateStatus(3,"");
@@ -431,9 +429,9 @@ void MainWindow::on_submitButton_clicked()
         emit on_signal_updateStatus(0,"INPUT SUCCESS");
     }
 
-    QList<quint8> xList;
-    QList<quint8> yList;
-    QList<qint8> zList;
+    QList<quint16> xList;
+    QList<quint16> yList;
+    QList<qint16> zList;
 
     for (int k = 0; k <= MAX_SIZE_X; k += (quint8)(radius*10)) xList.append(k);
     for (int k = 0; k <= MAX_SIZE_Y; k += (quint8)(radius*10)) yList.append(k);
@@ -461,4 +459,19 @@ void MainWindow::on_submitButton_clicked()
 
     mFileName = tempDataFile;
     worker->setFileName(mFileName);
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+     QString filter = "CSV (*.csv)";
+     QString fileName = QFileDialog::getSaveFileName(this, "Save report file", QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), filter);
+     if (fileName.isEmpty()) {
+         QMessageBox::warning(this, tr("Error"), tr("No input file name!!"), QMessageBox::Ok);
+         ui->label_8->setText("...");
+     } else {
+         worker->setFileExportName(fileName);
+         ui->label_8->setText(fileName);
+         worker->requestMethod(cWorker::Export);
+         QMessageBox::information(this, tr("Save report file"), tr("Save file successfully!!!"), QMessageBox::Ok);
+     }
 }

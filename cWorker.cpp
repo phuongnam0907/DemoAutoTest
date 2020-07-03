@@ -23,6 +23,7 @@ void cWorker::abort()
 
 void cWorker::doStart()
 {
+    moveToXYZ(0, 0, 0);
     mFile = new QFile(mFileName);
     QTextStream file(mFile);
     QString line;
@@ -63,19 +64,15 @@ void cWorker::doStart()
 
                             if (abort || interrupt) break;
 
-                            resultCode = mCardDetection->cardDetection(0x03, 0x01, 0x06, 0x06, 0x06, 0xFFFF, 100, &data);
+                            resultCode = mCardDetection->cardDetection(0x01, 0x01, 0x06, 0x06, 0x06, 0xFFFF, 100, &data);
                             if (resultCode == 0x00) countOk++;
                             mRFControl->rfReset();
                         }
 
-                        // percentOk = (float)countOk/(float)repeat;
+                         percentOk = (float)countOk/(float)repeat;
 
-                        // if (percentOk >= 0.9) packageData(x, y, z, "Card Detection", data, true);
-                        // else packageData(x, y, z, "Card Detection", data, false);
-
-                        // if (isDetected == true){
-
-                        // }
+                         if (percentOk >= 0.9) packageData(x, y, z + MAX_SIZE_Z, "Card Detection", data, true);
+                         else packageData(x, y, z + MAX_SIZE_Z, "Card Detection", data, false);
                     }
                 }
                 currentZ = z;
@@ -86,11 +83,10 @@ void cWorker::doStart()
 
                 if (isDetected == true)
                 {
-                    percentOk = (float)countOk/(float)repeat;
                     cExportClass myClass;
-                    myClass.setX(x);
-                    myClass.setY(x);
-                    myClass.setZ(x);
+                    myClass.setX((float)x/10);
+                    myClass.setY((float)y/10);
+                    myClass.setZ((float)(z + MAX_SIZE_Z)/10);
                     if (percentOk >= 0.9){
                         myClass.setResult(true);
                     } else {
@@ -98,8 +94,6 @@ void cWorker::doStart()
                     }
                     mListResult.append(myClass);
                 }
-                
-
             }
         }
     }
@@ -218,7 +212,7 @@ bool cWorker::moveToXYZ(float x, float y, float z)
 
     bool isCheck = true;
 
-    // Step 1: current x, current y, z + 20
+    // Step 1: current x, current y, z + 5
     isCheck = true;
     GetPose(mDobotId, &mPose);
     ptpCmd.x = mPose.x;
@@ -239,7 +233,7 @@ bool cWorker::moveToXYZ(float x, float y, float z)
             equalFloat(pose.r, ptpCmd.r)) isCheck = false;
     }
 
-    // Step 2: new x, new y, z + 20
+    // Step 2: new x, new y, z + 5
     isCheck = true;
     GetPose(mDobotId, &mPose);
     ptpCmd.x = mOriginPose.x + x;
@@ -312,16 +306,18 @@ void cWorker::setFileExportName(QString fileName)
 
 void cWorker::exportReport(){
     if (mListResult.isEmpty()){
-        // return
+        QFile exportFile(mFileExportName);
+        if (exportFile.open(QIODevice::WriteOnly | QIODevice::Text)){
+            QTextStream out(&exportFile);
+            out << "Z,\"(0,0)\"" << endl;
+            out << "0,F" << endl;
+            exportFile.close();
+        }
     } else {
         QStringList strList, strTitle;
-        int i, cycle;
+        int i, cycle = 0;
         float firstZ = mListResult[0].getZ();
         QString fileName = mFileExportName;
-
-        // QString filter = "CSV (*.csv)";
-        // QString fileName = QFileDialog::getSaveFileName(this, "Save report file", QDir::homePath(), filter);
-        // QString fileName = QFileDialog::getSaveFileName(this, "Save report file", QStandardPaths::writableLocation(QStandardPaths::DesktopLocation), filter);
 
         i = 0;
         while(true){
@@ -356,7 +352,5 @@ void cWorker::exportReport(){
             }
             exportFile.close();
         }
-
-        // QMessageBox
     }
 }
