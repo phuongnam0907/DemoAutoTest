@@ -1,0 +1,6 @@
+/.build/
+/build/
+*.user*
+DemoAutoTest.pro.user
+~$*.*
+~*.tmp
